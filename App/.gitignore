@@ -1,0 +1,10 @@
+Components/AnalyticsSection.py
+Components/HorizontalBars.py
+Components/LineCharts.py
+Components/LoadData.py
+Components/MapCharts.py
+Components/OverviewSection.py
+Components/RecomendationsSection.py
+Components/SidebarSection.py
+FigInteractApp.py
+temp.py
