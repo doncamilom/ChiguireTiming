@@ -7,12 +7,13 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
 
+from Components import MainTable
+
 
 InputBox = dbc.Card(
     [
         dbc.CardBody(
-        [dcc.Input(id='InputBox',placeholder='Numero de participante')]),
-         html.Button('Ingresar', id='submit-runner', n_clicks=0)
+        [dcc.Input(id='InputBox',placeholder='Numero de participante', n_submit=0, value="")]),
     ],
 )
 
@@ -59,7 +60,18 @@ box4 = dbc.Card(
     ]
 )
 
+## New row for the whole table with results
+
+boxTable = dbc.Card(
+    [
+        dbc.CardBody(
+            [html.Div([MainTable.fig])]#,style={"height":"500px"})]
+        )
+    ]
+)
+
+
 component2 = dbc.Row([dbc.Col(box3),dbc.Col(box4)])
 
-component = dbc.Col([component1,component2])
+component = dbc.Col([component1,component2,boxTable])
 

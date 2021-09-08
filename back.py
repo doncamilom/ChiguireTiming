@@ -1,14 +1,15 @@
 #! /usr/bin/env python3
 
-import numpy as np
 from pandas import Series
 from time import time
 
+# TO-DO
+# - Organizar por categorías
+# - Guardar la hora
 
 def main():
     global num_v, times_dict
 
-    t0 = time()
     times_dict = {}
 
     print("ANTES DE COMENZAR LA CARRERA:")
@@ -25,7 +26,10 @@ def main():
 
     inp = input("$: ")
     while inp!="START":
+        print("\t Ingrese un valor válido. START, todo en mayúscula!")
         inp = input("$: ")
+
+    t0 = time()  # Start counting time after user inputs START
 
     print("\nComienza la carrera!\n")
     print("* Para tomar el tiempo de un/a participante, introduzca el número de participante y pulse enter.")

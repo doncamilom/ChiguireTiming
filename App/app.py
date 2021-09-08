@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import numpy as np
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -10,11 +9,13 @@ from dash.dependencies import Input, Output, State, ClientsideFunction
 
 import plotly.express as px
 import plotly.graph_objects as go 
-import pandas as pd
 import os
 
-from Components import InputVals
+import pandas as pd
 from time import time
+from datetime import datetime
+
+from Components import MainPage, LoadData
 
 #Create the app
 app = dash.Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP]) #USING BOOTSTRAP'S CSS LIBRARY
@@ -22,7 +23,7 @@ app = dash.Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP]) #USING 
 
 content = dbc.Card(
             dbc.CardBody(
-                [InputVals.component]
+                [MainPage.component]
                         )
                   )
 
@@ -37,10 +38,9 @@ title = dbc.Container([ html.H1("CARRERITAS", className="ml-3 mt-3")])  #,html.H
 app.layout =  html.Div([tabs])
 
 
+
 ###################################################### Callbacks ###################################################
 
-global t0
-t0 = 0
 
 ## Update text box so it shows what you're writing
 @app.callback(
@@ -50,24 +50,32 @@ t0 = 0
 def write(*vals):
     return vals
 
-## Submit runner time when clicking SUBMIT button
+## Submit runner time when hiting Enter
 global runner_list
 runner_list = []
 
 @app.callback(
     Output('some-log','children'),
-    [Input("submit-runner","n_clicks"),],
+    [Input("InputBox","n_submit"),],
     [State('InputBox','value')]
 )
-def submit_runner(n_clicks,value):
+def submit_runner(n_submit,value):
     if value not in runner_list:
         runner_list.append(value)
     return value
 
+## Clear text box when submitting runner
+@app.callback(
+    Output('InputBox','value'),
+    [Input("InputBox","n_submit"),],
+)
+def submit_runner(n_submit):
+    return ""
+
 ## Present time of runner when they are submitted
 @app.callback(
     Output('RunnerList','children'),
-    [Input("submit-runner","n_clicks"),Input('start_button','n_clicks')],
+    [Input("InputBox","n_submit"),Input('start_button','n_clicks')],
     [State('InputBox','value')]
 )
 def text_submit_runner(clk_runner,n_clicks,value):
@@ -75,8 +83,8 @@ def text_submit_runner(clk_runner,n_clicks,value):
         return 'No has comenzado a contar el tiempo!!'
     
     if n_clicks==1 and clk_runner>0:
-        t = time()-t0
-        return "Tiempo para corredor/a {0}: {1:.0f}h {2:.0f}m {3:.2f}s.".format(value, t//3600,(t%3600)//60,t%60 )
+        dt = datetime.now()
+        return "Participante {0} llega el {1} a las {2}".format(value,dt.date(),dt.time())
 
     if n_clicks==2 and clk_runner>0:
         return 'Ya se acabó la carrera!'
@@ -92,7 +100,7 @@ def timer_text(n_clicks,value):
     if n_clicks==0:
         return 'Pulse INICIAR para iniciar el contador'
     if n_clicks==1:  
-        print()
+        t0 = time() # Start counting time
         return 'CORRIENDO. Pulse el botón para terminar.'
     if n_clicks>=2:
         return 'CARRERA TERMINADA'
@@ -107,13 +115,47 @@ def timer_button(n_clicks,value):
     if n_clicks==0:
         return 'INICIAR'
     if n_clicks==1:  
-        t0 = time()# Start time counter
         return 'TERMINAR'
     if n_clicks>=2:
         return ':)'
 
 
+## When hitting START, reset n_submit 
+@app.callback(
+    Output('InputBox','n_submit'),
+    [Input('start_button','n_clicks')],
+    [State('InputBox','n_submit')]
+)
+def timer_text(n_clicks,curr_n_submit):
+    # If not clicked, or clicked once, reset whatever value was set on n_submit
+    if n_clicks==1 or n_clicks==0:        return 0  
+    # Else, just leave it as it was
+    if n_clicks>=2:   return curr_n_submit
 
+############### Callbacks for updating the table
+
+### Update values on the dataframe
+@app.callback(
+    Output('mainTable','data'),
+    [Input("InputBox","n_submit"),Input('start_button','n_clicks')],
+    [State('mainTable','data'),State('InputBox','value')]
+)
+
+def update_dataframe(n_submit, n_clicks,child, value):
+
+    ### TODO make this code nicer!
+    for i,entry in enumerate(child):
+        try:        val = int(value)
+        except:     val = None
+        if int(entry['Numero']) == val:
+            child[i]['Hora de llegada'] = datetime.now().time()
+
+    return child
+
+### TODO callback to reorder table as new entries arrive
+### TODO write to a file each time a new entry arrives
+### make the script try to load the partially filled database, in case it exists.
+###      That way we can restart an unfinished race in case the program crashes or whatever
 
 
 ###################################################### Run app server ###################################################    
