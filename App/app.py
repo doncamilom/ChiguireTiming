@@ -15,21 +15,27 @@ import pandas as pd
 from time import time
 from datetime import datetime
 
-from Components import MainPage, LoadData
+from Components import MainPage, LoadData, SecondaryPage
 
 #Create the app
 app = dash.Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP]) #USING BOOTSTRAP'S CSS LIBRARY
 
 
-content = dbc.Card(
+Crosscountry = dbc.Card(
             dbc.CardBody(
-                [MainPage.component]
+                [MainPage.component],
                         )
                   )
 
+Formato2 = dbc.Card(
+            dbc.CardBody(
+                [SecondaryPage.component],
+                        )
+                  )
 tabs = dbc.Tabs(
     [
-        dbc.Tab(content, label="Entrada de datos"),
+        dbc.Tab(Crosscountry, label="Crosscountry"),
+        dbc.Tab(Formato2, label="Otro formato holi"),
     ],
     className="header",
 )
@@ -134,28 +140,56 @@ def timer_text(n_clicks,curr_n_submit):
 
 ############### Callbacks for updating the table
 
-### Update values on the dataframe
+from numpy import nan
+### Update values on the dataframe and re-sort
 @app.callback(
     Output('mainTable','data'),
-    [Input("InputBox","n_submit"),Input('start_button','n_clicks')],
+    [Input("InputBox","n_submit")],
     [State('mainTable','data'),State('InputBox','value')]
 )
 
-def update_dataframe(n_submit, n_clicks,child, value):
+def update_dataframe(n_submit, data, value):
+    df = pd.DataFrame(data)
+    try:        val = int(value)  # If there's a number in InputBox (and n_submit was activated)
+    except:     val = None
+    if val == None or val not in df['Numero'].values: return data
 
-    ### TODO make this code nicer!
-    for i,entry in enumerate(child):
-        try:        val = int(value)
-        except:     val = None
-        if int(entry['Numero']) == val:
-            child[i]['Hora de llegada'] = datetime.now().time()
+    # If a runner has a time already, don't change it's time again
+    curr_time_val = df.loc[df['Numero'] == val,'Hora de llegada'].values[0]
+    if curr_time_val is None:
+        df.loc[df['Numero'] == val,'Hora de llegada'] = datetime.now()
 
-    return child
+    df['Hora de llegada'] = pd.to_datetime(df['Hora de llegada'])
+    df['Hora de salida'] = pd.to_datetime(df['Hora de salida'])
 
-### TODO callback to reorder table as new entries arrive
+    # Calculate total time spent for those runners that already crossed the line
+    df['Tiempo de carrera'] = (df['Hora de llegada'] - df['Hora de salida'])
+
+    df['Tiempo de carrera'] = df['Tiempo de carrera'].dt.seconds
+
+    df['Hora de llegada'] = df['Hora de llegada'].dt.time 
+    df['Hora de salida'] = df['Hora de salida'].dt.time 
+
+
+    # Now calc. time difference from first place by category
+    
+
+    df = df.sort_values('Tiempo de carrera')
+    
+    # Write to file as new entries come, so data isn't lost
+    
+
+    return df.to_dict('records')
+
+
+
 ### TODO write to a file each time a new entry arrives
 ### make the script try to load the partially filled database, in case it exists.
 ###      That way we can restart an unfinished race in case the program crashes or whatever
+
+### TODO: make a tab for each possible type of race
+
+### TODO: text to voice: Name, number, time, delta time from first place, etc. as runner goes through goal
 
 
 ###################################################### Run app server ###################################################    

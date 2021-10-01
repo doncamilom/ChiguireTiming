@@ -13,7 +13,11 @@ from Components import MainTable
 InputBox = dbc.Card(
     [
         dbc.CardBody(
-        [dcc.Input(id='InputBox',placeholder='Numero de participante', n_submit=0, value="")]),
+            [
+            dcc.Input(id='InputBox',placeholder='Numero de participante', n_submit=1, 
+                        value="", className='div-inputbox'),
+            ]
+        ),
     ],
 )
 
@@ -36,7 +40,7 @@ box21 = dbc.Card(
     ]
 )
 
-Col1 = dbc.Col([InputBox],width='3')
+Col1 = dbc.Col([InputBox],width='6')
 Col2 = dbc.Col([box2],width='3')
 Col3 = dbc.Col([box21],width='3')
 
