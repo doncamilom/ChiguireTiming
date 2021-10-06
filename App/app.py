@@ -16,15 +16,15 @@ from numpy import isnan,random
 from time import time
 from datetime import datetime, timedelta
 
-from Components import Crosscountry, LoadData, Sorteo
+from Components import Cronoescalada, LoadData, Sorteo
 
 #Create the app
 app = dash.Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP]) #USING BOOTSTRAP'S CSS LIBRARY
 
-
-Crosscountry = dbc.Card(
+NumBoxes = Cronoescalada.numBoxes
+Cronoescalada = dbc.Card(
             dbc.CardBody(
-                [Crosscountry.component],
+                [Cronoescalada.component],
                         ), className='mainPage-card'
                   )
 
@@ -35,7 +35,7 @@ Formato2 = dbc.Card(
                   )
 tabs = dbc.Tabs(
     [
-        dcc.Tab(Crosscountry, label="Crosscountry"),
+        dcc.Tab(Cronoescalada, label="Cronoescalada"),
         dbc.Tab(Formato2, label="Sorteo"),
     ],
     className="header",
@@ -47,14 +47,6 @@ app.layout =  html.Div([tabs])
 
 ###################################################### Callbacks ###################################################
 
-
-## Update text box so it shows what you're writing
-@app.callback(
-    Output("OutBox","children"),
-    [Input("InputBox","value")]
-)
-def write(*vals):
-    return vals
 
 @app.callback(
     Output("output-random-name","children"),
@@ -69,100 +61,45 @@ def sorteo(n_clicks,data):
         return f"{name} con número {number}"
 
     
-
-## Submit runner time when hiting Enter
-#global runner_list
-#runner_list = []
-
-#@app.callback(
-#    Output('some-log','children'),
-#    [Input("InputBox","n_submit"),],
-#    [State('InputBox','value')]
-#)
-#def submit_runner(n_submit,value):
-#    if value not in runner_list:
-#        runner_list.append(value)
-#    return value
-
 ## Clear text box when submitting runner
-@app.callback(
-    Output('InputBox','value'),
-    [Input("InputBox","n_submit"),],
-)
-def submit_runner(n_submit):
-    return ""
-
-## Present time of runner when they are submitted
-#@app.callback(
-#    Output('RunnerList','children'),
-#    [Input("InputBox","n_submit"),Input('start_button','n_clicks')],
-#    [State('InputBox','value')]
-#)
-#def text_submit_runner(clk_runner,n_clicks,value):
-#    if n_clicks==0 and clk_runner>0: # If runner submited without starting race
-#        return 'No has comenzado a contar el tiempo!!'
-#    
-#    if n_clicks==1 and clk_runner>0:
-#        dt = datetime.now()
-#        return "Participante {0} llega el {1} a las {2}".format(value,dt.date(),dt.time())
-#
-#    if n_clicks==2 and clk_runner>0:
-#        return 'Ya se acabó la carrera!'
+for box in range(NumBoxes):
+    @app.callback(
+        Output(f'InputBox_{box}','value'),
+        [Input(f"InputBox_{box}","n_submit"),],
+        [State(f"InputBox_{box}","value")]
+    )
+    def submit_runner(n_submit,curr_val):
+        ctx = dash.callback_context
+        # Tell which Input box was activated
+        if ctx.triggered: 
+            # Check if box {box} is the one that was activated
+            is_this_box = ctx.triggered[0]['prop_id'].split(".")[0] == f"InputBox_{box}"
+            if is_this_box: return ""  # If so, clear its value
+        else:     return curr_val      # Else, return same value
 
 
-## Change START button description when clicking on it
-#@app.callback(
-#    Output('start_butt_text','children'),
-#    [Input('start_button','n_clicks')],
-#    [State('start_butt_text','children')]
-#)
-#def timer_text(n_clicks,value):
-#    if n_clicks==0:
-#        return 'Pulse INICIAR para iniciar el contador'
-#    if n_clicks==1:  
-#        t0 = time() # Start counting time
-#        return 'CORRIENDO. Pulse el botón para terminar.'
-#    if n_clicks>=2:
-#        return 'CARRERA TERMINADA'
-
-## Change START button text when click
-#@app.callback(
-#    Output('start_button','children'),
-#    [Input('start_button','n_clicks')],
-#    [State('start_butt_text','children')]
-#)
-#def timer_button(n_clicks,value):
-#    if n_clicks==0:
-#        return 'INICIAR'
-#    if n_clicks==1:  
-#        return 'TERMINAR'
-#    if n_clicks>=2:
-#        return ':)'
-
-
-## When hitting START, reset n_submit 
-#@app.callback(
-#    Output('InputBox','n_submit'),
-#    [Input('start_button','n_clicks')],
-#    [State('InputBox','n_submit')]
-#)
-#def timer_text(n_clicks,curr_n_submit):
-#    # If not clicked, or clicked once, reset whatever value was set on n_submit
-#    if n_clicks==1 or n_clicks==0:        return 0  
-#    # Else, just leave it as it was
-#    if n_clicks>=2:   return curr_n_submit
 
 ############### Callbacks for updating the table
-
 from numpy import nan
+
 ### Update values on the dataframe and re-sort
+
 @app.callback(
     Output('mainTable','data'),
-    [Input("InputBox","n_submit")],
-    [State('mainTable','data'),State('InputBox','value')]
+    [Input(f"InputBox_{box}","n_submit") for box in range(NumBoxes)],
+    [State('mainTable','data'),*[State(f'InputBox_{box}','value') for box in range(NumBoxes)]]
 )
+def update_dataframe(*vals):
+    data = vals[NumBoxes] # Data is the input in the middle of the list
 
-def update_dataframe(n_submit, data, value):
+    ctx = dash.callback_context
+    # Tell which Input box was activated
+    if ctx.triggered: # If there's an activation
+        activd_b = int(ctx.triggered[0]['prop_id'].split("_")[1].split(".")[0])
+    else:     return data
+
+    value = vals[NumBoxes+1+activd_b] # Select the value inside the InputBox that was triggered
+
     df = pd.DataFrame(data)
     try:        val = int(value)  # If there's a number in InputBox (and n_submit was activated)
     except:     val = None
@@ -192,7 +129,6 @@ def update_dataframe(n_submit, data, value):
     for cat in df['CATEGORIA'].unique():
         df.loc[df['CATEGORIA']==cat,'POSICIÓN'] = df.loc[df['CATEGORIA']==cat,'TOTAL'].rank()
     
-
     df = df.sort_values('TOTAL')
     
     # Write to file as new entries come, so data isn't lost
@@ -200,12 +136,11 @@ def update_dataframe(n_submit, data, value):
         for cat in df['CATEGORIA'].unique():
             df[df['CATEGORIA']==cat].to_excel(writer,sheet_name=cat[:30],index=False)
     
-
     return df.to_dict('records')
 
 
 
-### TODO write to a file each time a new entry arrives
+
 ### make the script try to load the partially filled database, in case it exists.
 ###      That way we can restart an unfinished race in case the program crashes or whatever
 
