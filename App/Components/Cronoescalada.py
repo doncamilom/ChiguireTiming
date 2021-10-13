@@ -24,6 +24,7 @@ for pair in range(numBoxes//2):
 
 # Include button for uploading data
 upload = dcc.Upload(html.Button("Subir archivo"),id="upload",multiple=False)
+upload_fb = html.Div("",id="upload-fb") # Feedback for upload button, in case load fails
 
 # Create column with the rows of input boxes and the upload button
 BoxesCol = dbc.Col(Rows,style={"margin-left":"0px","margin-bottom":"30px"})
@@ -32,9 +33,6 @@ BoxesCol = dbc.Col([BoxesCol,upload],style={"margin-bottom":"40px"})
 sz="30%"
 img = html.Img(src="../assets/chigui.jpg",style={"width":sz,"height":sz,"margin-right":"12px"})
 
-# Just a dummy placeholder to temporarily store df when loading
-dumm_div = html.Div(id="df-load-placeholder")
-
-Row = dbc.Row([BoxesCol,img,dumm_div])
+Row = dbc.Row([BoxesCol,img])
 
 component = dbc.Col([Row,DataTable.fig])

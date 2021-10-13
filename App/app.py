@@ -62,9 +62,6 @@ def sorteo(n_clicks,data):
         name = df.loc[df["NÚMERO"]==number,"NOMBRE"].values[0]
         return f"{name} con número {number}"
 
-
-
-
     
 ## Clear text box when submitting runner
 for box in range(NumBoxes):
@@ -89,34 +86,41 @@ from numpy import nan
 
 ### Update values on the dataframe and re-sort
 
-#@app.callback(
-#    Output("df-load-placeholder","children"),
-#    Input("upload","contents"),
-#    State("upload","filename")
-#)
-#def get_filename(contents,filename):
-#    if contents:
-#        content_str = contents.split(",")[1]
-#        decoded = base64.b64decode(content_str)
-#
-#        df = pd.read_excel(io.BytesIO(decoded))
-#        return [df.to_dict()]
-
 @app.callback(
     Output('mainTable','data'),
-    [Input(f"InputBox_{box}","n_submit") for box in range(NumBoxes)],
-    [State('mainTable','data'),*[State(f'InputBox_{box}','value') for box in range(NumBoxes)]]
+    [Input(f"InputBox_{box}","n_submit") for box in range(NumBoxes)] + [Input("upload","contents"), Input("upload","filename")],
+    [State('mainTable','data')] + [State(f'InputBox_{box}','value') for box in range(NumBoxes)]
 )
 def update_dataframe(*vals):
-    data = vals[NumBoxes] # Data is the input in the middle of the list
 
+    ## First to do: when Upload button is activated
     ctx = dash.callback_context
+    filename = vals[NumBoxes+1]
+
+    # Upload datafile when upload button is activated
+    if ctx.triggered[0]["prop_id"] == "upload.contents":
+        contents = ctx.triggered[0]["value"]
+        content_str = contents.split(",")[1]
+        decoded = base64.b64decode(content_str)
+
+        try:
+            if 'xls' in filename:
+                df = LoadData.LoadData(io.BytesIO(decoded))
+                return df.to_dict("records")
+        except:
+            pass
+            
+
+    vals = vals[:-1]
+    data = vals[NumBoxes+2] # Data is the input in the middle of the list
+
+
     # Tell which Input box was activated
     if ctx.triggered: # If there's an activation
         activd_b = int(ctx.triggered[0]['prop_id'].split("_")[1].split(".")[0])
     else:     return data
 
-    value = vals[NumBoxes+1+activd_b] # Select the value inside the InputBox that was triggered
+    value = vals[NumBoxes+3+activd_b] # Select the value inside the InputBox that was triggered
 
     df = pd.DataFrame(data)
     try:        val = int(value)  # If there's a number in InputBox (and n_submit was activated)
@@ -158,6 +162,7 @@ def update_dataframe(*vals):
 
 
 
+### ADD another button for loading preobtained results, so collected data can be recovered when page is refreshed
 
 ### make the script try to load the partially filled database, in case it exists.
 ###      That way we can restart an unfinished race in case the program crashes or whatever
