@@ -10,7 +10,7 @@ import pandas as pd
 from Components import DataTable
 
 
-numBoxes = 20 # Make sure this is even
+numBoxes = 10 # Make sure this is even
 boxes = []
 for box in range(numBoxes):
     InputBox = dcc.Input(id=f'InputBox_{box}',placeholder=f'Numero de participante {box+1}', n_submit=1, 
@@ -22,10 +22,19 @@ Rows = []
 for pair in range(numBoxes//2):
     Rows.append(dbc.Row([boxes[pair*2],boxes[pair*2+1]]))
 
-BoxesCol = dbc.Col(Rows,style={"margin-left":"13px","margin-bottom":"40px"})
+# Include button for uploading data
+upload = dcc.Upload(html.Button("Subir archivo"),id="upload",multiple=False)
 
-sz="23%"
-img = html.Img(src="../assets/chigui.jpg",style={"width":sz,"height":sz,"margin-right":"13px"})
-Row = dbc.Row([BoxesCol,img])
+# Create column with the rows of input boxes and the upload button
+BoxesCol = dbc.Col(Rows,style={"margin-left":"0px","margin-bottom":"30px"})
+BoxesCol = dbc.Col([BoxesCol,upload],style={"margin-bottom":"40px"})
+
+sz="30%"
+img = html.Img(src="../assets/chigui.jpg",style={"width":sz,"height":sz,"margin-right":"12px"})
+
+# Just a dummy placeholder to temporarily store df when loading
+dumm_div = html.Div(id="df-load-placeholder")
+
+Row = dbc.Row([BoxesCol,img,dumm_div])
 
 component = dbc.Col([Row,DataTable.fig])

@@ -9,7 +9,9 @@ from dash.dependencies import Input, Output, State, ClientsideFunction
 
 import plotly.express as px
 import plotly.graph_objects as go 
+import base64
 import os
+import io
 
 import pandas as pd
 from numpy import isnan,random
@@ -60,6 +62,9 @@ def sorteo(n_clicks,data):
         name = df.loc[df["NÚMERO"]==number,"NOMBRE"].values[0]
         return f"{name} con número {number}"
 
+
+
+
     
 ## Clear text box when submitting runner
 for box in range(NumBoxes):
@@ -83,6 +88,19 @@ for box in range(NumBoxes):
 from numpy import nan
 
 ### Update values on the dataframe and re-sort
+
+#@app.callback(
+#    Output("df-load-placeholder","children"),
+#    Input("upload","contents"),
+#    State("upload","filename")
+#)
+#def get_filename(contents,filename):
+#    if contents:
+#        content_str = contents.split(",")[1]
+#        decoded = base64.b64decode(content_str)
+#
+#        df = pd.read_excel(io.BytesIO(decoded))
+#        return [df.to_dict()]
 
 @app.callback(
     Output('mainTable','data'),
