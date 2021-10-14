@@ -44,7 +44,7 @@ input[type="button"] {
   display: inline-block;
   height: 38px;
   padding: 0 30px;
-  color: #f90600;
+  color: #000;
   text-align: center;
   font-size: 11px;
   font-weight: 600;
@@ -89,6 +89,27 @@ button.button-primary:focus,
 input[type="submit"].button-primary:focus,
 input[type="reset"].button-primary:focus,
 input[type="button"].button-primary:focus {
+  color: #000;
+  background-color: #1EAEDB;
+  border-color: #1EAEDB; }
+.button.button-secondary,
+button.button-secondary,
+input[type="submit"].button-secondary,
+input[type="reset"].button-secondary,
+input[type="button"].button-secondary {
+  color: #000;
+  background-color: #33C3F0;
+  border-color: #33C3F0; }
+.button.button-secondary:hover,
+button.button-secondary:hover,
+input[type="submit"].button-secondary:hover,
+input[type="reset"].button-secondary:hover,
+input[type="button"].button-secondary:hover,
+.button.button-secondary:focus,
+button.button-secondary:focus,
+input[type="submit"].button-secondary:focus,
+input[type="reset"].button-secondary:focus,
+input[type="button"].button-secondary:focus {
   color: #000;
   background-color: #1EAEDB;
   border-color: #1EAEDB; }

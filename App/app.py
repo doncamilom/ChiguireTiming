@@ -14,7 +14,7 @@ import os
 import io
 
 import pandas as pd
-from numpy import isnan,random
+from numpy import isnan,random,nan
 from time import time
 from datetime import datetime, timedelta
 
@@ -82,47 +82,65 @@ for box in range(NumBoxes):
 
 
 ############### Callbacks for updating the table
-from numpy import nan
 
 ### Update values on the dataframe and re-sort
 
 @app.callback(
     Output('mainTable','data'),
-    [Input(f"InputBox_{box}","n_submit") for box in range(NumBoxes)] + [Input("upload","contents"), Input("upload","filename")],
+    [Input(f"InputBox_{box}","n_submit") for box in range(NumBoxes)] + [Input("upload","contents"), 
+         Input("upload","filename"), Input("load-preobt","n_clicks"),
+         Input("go-back-one","n_clicks")],
+
     [State('mainTable','data')] + [State(f'InputBox_{box}','value') for box in range(NumBoxes)]
 )
 def update_dataframe(*vals):
+    n_extra_inps = len(vals) - NumBoxes*2 - 1
 
     ## First to do: when Upload button is activated
-    ctx = dash.callback_context
+    ctx_trig = dash.callback_context.triggered
     filename = vals[NumBoxes+1]
 
     # Upload datafile when upload button is activated
-    if ctx.triggered[0]["prop_id"] == "upload.contents":
-        contents = ctx.triggered[0]["value"]
+    if ctx_trig[0]["prop_id"] == "upload.contents":
+        contents = ctx_trig[0]["value"]
         content_str = contents.split(",")[1]
         decoded = base64.b64decode(content_str)
-
-        try:
+        try: # In case user selects a non-excel file, do nothing!
             if 'xls' in filename:
                 df = LoadData.LoadData(io.BytesIO(decoded))
                 return df.to_dict("records")
-        except:
-            pass
+        except: pass
             
+    # Load saved results file (in case of refresh to stop loss of data)
+    if ctx_trig[0]["prop_id"] == "load-preobt.n_clicks":
+        return LoadData.LoadPrerecordedResults()[0].to_dict("records")    
 
-    vals = vals[:-1]
-    data = vals[NumBoxes+2] # Data is the input in the middle of the list
+    data = vals[NumBoxes+n_extra_inps] # Data is the input in the middle of the list
+    df = pd.DataFrame(data)
 
+    # Remove entered timings for last runner entered (in case of missentered number)
+    if ctx_trig[0]["prop_id"] == "go-back-one.n_clicks":
+        # Select entry with max HORA LLEGADA and reset entered data for that person.
+        df["HORA LLEGADA"] = pd.to_datetime(df["HORA LLEGADA"])
+
+        max_dt = df["HORA LLEGADA"].max()
+        df.loc[df["HORA LLEGADA"]==max_dt,["HORA LLEGADA","TOTAL","POSICIÓN"]] = nan 
+    
+        df['HORA LLEGADA'] = df['HORA LLEGADA'].dt.time 
+        return df.sort_values("TOTAL").to_dict("records")
+
+
+    ############################
+    # Input data through boxes #
+    ############################
 
     # Tell which Input box was activated
-    if ctx.triggered: # If there's an activation
-        activd_b = int(ctx.triggered[0]['prop_id'].split("_")[1].split(".")[0])
+    if ctx_trig: # If there's an activation
+        activd_b = int(ctx_trig[0]['prop_id'].split("_")[1].split(".")[0])
     else:     return data
 
-    value = vals[NumBoxes+3+activd_b] # Select the value inside the InputBox that was triggered
+    value = vals[NumBoxes+1+n_extra_inps+activd_b] # Select the value inside the InputBox that was triggered
 
-    df = pd.DataFrame(data)
     try:        val = int(value)  # If there's a number in InputBox (and n_submit was activated)
     except:     val = None
     if val == None or val not in df['NÚMERO'].values: return data
@@ -132,7 +150,7 @@ def update_dataframe(*vals):
     if curr_time_val is None:
         df.loc[df['NÚMERO'] == val,'HORA LLEGADA'] = datetime.now()
 
-    df['HORA LLEGADA'] = pd.to_datetime(df['HORA LLEGADA']).dt.round('1s')
+    df['HORA LLEGADA'] = pd.to_datetime(df['HORA LLEGADA']).dt.round('10ms')
     df['HORA SALIDA'] = pd.to_datetime(df['HORA SALIDA'])
 
     # Calculate total time spent for those runners that already crossed the line
@@ -142,7 +160,7 @@ def update_dataframe(*vals):
                             .seconds
                             .apply(lambda x: str(timedelta(seconds=x)) if ~isnan(x) else None))
 
-    df['HORA LLEGADA'] = df['HORA LLEGADA'].dt.time 
+    df['HORA LLEGADA'] = df['HORA LLEGADA'].dt.time
     df['HORA SALIDA'] = df['HORA SALIDA'].dt.time 
 
     # Now calc. time difference from first place by category
@@ -162,15 +180,8 @@ def update_dataframe(*vals):
 
 
 
-### ADD another button for loading preobtained results, so collected data can be recovered when page is refreshed
-
-### make the script try to load the partially filled database, in case it exists.
-###      That way we can restart an unfinished race in case the program crashes or whatever
-
-### TODO: make a tab for each possible type of race
-
+### TODO: make a tab for each type of race
 ### TODO: text to voice: Name, number, time, delta time from first place, etc. as runner goes through goal
-
 
 ###################################################### Run app server ###################################################    
     
