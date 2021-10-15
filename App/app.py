@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import flask
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -21,7 +22,8 @@ from datetime import datetime, timedelta
 from Components import Cronoescalada, LoadData, Sorteo
 
 #Create the app
-app = dash.Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP]) #USING BOOTSTRAP'S CSS LIBRARY
+server = flask.Flask(__name__)
+app = dash.Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP],server=server) #USING BOOTSTRAP'S CSS LIBRARY
 
 NumBoxes = Cronoescalada.numBoxes
 Cronoescalada = dbc.Card(
@@ -60,7 +62,7 @@ def sorteo(n_clicks,data):
     if n_clicks>0:   
         number = random.choice(df["NÚMERO"])
         name = df.loc[df["NÚMERO"]==number,"NOMBRE"].values[0]
-        return f"{name} con número {number}"
+        return f"{name} con numero {number}"
 
     
 ## Clear text box when submitting runner
@@ -186,4 +188,4 @@ def update_dataframe(*vals):
 ###################################################### Run app server ###################################################    
     
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=True, host="0.0.0.0", port=8000, use_reloader=False)
