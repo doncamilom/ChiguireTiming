@@ -92,6 +92,7 @@ def main():
 def check_out():
     print("\n\t ** Confirme que quiere terminar la carrera.")
 
+    # Lista de los que faltan
     quien_falta = []
     for ID in times_dict.keys():
         lefalta = num_v - len(times_dict[ID]) 
