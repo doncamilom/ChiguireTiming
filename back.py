@@ -8,6 +8,7 @@ from time import time
 # - Guardar la hora
 
 def main():
+    """Project description"""
     global num_v, times_dict
 
     times_dict = {}
